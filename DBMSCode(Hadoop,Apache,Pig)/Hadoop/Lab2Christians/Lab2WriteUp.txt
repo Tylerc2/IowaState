@@ -1,0 +1,7 @@
+Lab2
+
+I was unable to get part 2 of the lab to work properly, instead my code sorts by the length of the bigrate. I blieve this to be a problem with the job ordering and was unable to find a solution to the job ordering that would enable me to properly get the code to run.
+
+To get past bigrams spanning multiple lines the can easily be split amongst lines and accounting for the first word of each line being duplicated in a sense.
+ 
+
