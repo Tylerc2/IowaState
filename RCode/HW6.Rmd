@@ -1,0 +1,382 @@
+---
+title: "HW6"
+author: "Tyler Christians"
+date: "2022-10-17"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Problem 1.
+
+a.
+
+
+Our goal in fitting a model is using data that we already have present to create a model that can predict data that we do not have available yet. There are a few assumptions required to make this model. The first is a linear relatiobnship between the response and explanatory variables. Second is Normality. Third is Independence, there is little or no correlation between explanatory variables. Last is Homoscedasity.
+
+
+b.
+
+
+Typically we would use a method of least sqaures. This method essentially fines a value for Beta in our model that minimizes the distance between our points of data and a regression line that is created, it finds the closest line to having our residuals equal 0.
+
+
+c.
+
+
+The Regression estimates can be found out to be trustworthy using hypothesis testing. This helps us to find the probability that our specific coefficient is not equal to 0. If it were equal to 0 that would bean that is serves no purpose being in our model.
+
+
+d.
+
+
+A prediction for Y can be obtained by using our model. This means if we have a model for example Yhat = Beta1(x1) + Beta2(x2) + Beta3(x3) We would multiple the values of beta by our values at their corresponding x value. We quantify uncertainty by adding an error term to our model.
+
+
+e.
+
+WE can evaluate how good our model is at predicting by splitting the data into train and test sets. We can create our model using the train set then use that to predict the test set. Then we can get our Mean Square error value by subtracting our actual values from our predicted values then squaring it. The closer the MSE is to 0 the better our model is.
+
+
+f.
+
+
+Statistical inference is a way of making decisions about the parameters of a population with our random sample, it also helps to measure the uncertainty of the variation between samples. It is very useful in modeling because no two sample populations will be the same which can lead to different model outcomes each time.
+
+
+g.
+
+
+Issue 1:
+
+One issue is over fitting of the model. This can result from making a model too complex, a lot of the times this can create an extremely low training MSE but doesn't always work well for our test MSE as the model was essentially too focuses on our training data. This can be resolved by creating a looser model that is less complex.
+
+
+Issue 2:
+
+Multicolinearity can occur when we are creating our model and some of its predictors have a high correlation. This can be addressed by creating an interaction term between them.
+
+
+Issue 3:
+
+Creating a model that with extremely low bias. This creates a model that doesn't give accurate predictions for our data resulting in often times an extremely high train and test MSE. This can be fixed by adding complexity to the model.
+
+
+
+
+Problem 3.
+
+
+a.
+
+
+Multicollinearity can be a problem when making predictions.
+
+
+b.
+
+
+```{r echo=FALSE}
+set.seed(42)
+x1 = runif(100)
+x2 = 0.8*x1 + rnorm(100,0,0.1)
+
+print(paste("The correlation between x1 and x2 is", round(cor(x1,x2),4)))
+```
+
+
+c.
+
+
+```{r echo=FALSE}
+error <- runif(100, 0, 4)
+Y <- 3 + 2 * x1 + 4 * x2 + error
+df <- data.frame(Y, x1, x1)
+index <- c(1:50)
+
+train <- df[index,]
+test <- df[-index,]
+
+trainM <- lm(Y ~ ., data = train)
+
+m <- mean((test$Y - predict.lm(trainM, test)) ^ 2)
+
+print(paste("The test MSE of this model is", round(m, 4)))
+```
+
+
+d.
+
+
+```{r echo=FALSE}
+results <- rep(0, 2500)
+for (i in 1:2500) {
+  
+  error <- runif(100, 0, 4)
+  Y1 <- 3 + 2 * x1 + 4 * x2 + error
+  
+  df <- data.frame(Y1, x1, x2)
+  
+  index <- c(1:50)
+  train <- df[index,]
+  test <- df[-index,]
+
+  trainM <- lm(Y1 ~ x1+x2, data = train)
+
+  m <- mean((test$Y - predict.lm(trainM, test)) ^ 2)
+  
+  results[i] <- m
+}
+
+print(paste("The mean MSE for 2500 trials is", round(mean(m),4)))
+
+hist(results)
+```
+
+
+
+e.
+
+
+```{r}
+set.seed(24)
+x1 = runif(100)
+x2 = rnorm(100,0,1)
+
+error <- runif(100, 0, 4)
+Y2 <- 3 + 2 * x1 + 4 * x2 + error
+print(paste("The correlation between x1 and x2 is", round(cor(x1,x2),4)))
+```
+
+
+f.
+```{r echo=FALSE}
+results <- rep(0, 2500)
+for (i in 1:2500) {
+  
+  error <- runif(100, 0, 4)
+  Y3 <- 3 + 2 * x1 + 4 * x2 + error
+  
+  df <- data.frame(Y3, x1, x2)
+  
+  index <- c(1:50)
+  train <- df[index,]
+  test <- df[-index,]
+
+  trainM <- lm(Y3 ~ x1+x2, data = train)
+
+  m <- mean((test$Y3 - predict.lm(trainM, test)) ^ 2)
+  
+  results[i] <- m
+}
+
+print(paste("The mean MSE for 2500 trials when predictors are not correlated is", round(mean(m),4)))
+
+hist(results)
+```
+
+
+
+The distribution is nearly the same but the test MSE is lower.
+
+
+g.
+
+Multicolinearity can be a problem because the test MSE for uncorrelated was on average about 25% lower than it was with correlated predictors
+
+
+
+Problem 3.
+
+
+a.
+
+
+```{r echo=FALSE, warning=FALSE}
+library(ISLR2)
+df <- Auto
+
+df <- df[,-9]
+
+model <- lm(mpg~., data = df)
+
+summary(model)
+```
+
+Yes, Displacement, Weight, Year, and Origin, are all significant predictors at an alpha level of 0.05. This is according to their p values.
+
+
+b.
+
+
+```{r echo=FALSE}
+cor(df)
+```
+
+
+c.
+
+
+Yes multicolinearity is a problem, as there are several highly correlated terms, like cyliinders and displacement, weight and cylinders and several others. We can drop predictors that have a high vif score, over 10, then progressively remove them
+
+
+```{r warning=FALSE}
+library(car)
+vif(model)
+
+model1 <- lm(mpg~. -displacement, data = df)
+vif(model1)
+```
+
+
+Problem 4.
+
+
+a.
+
+
+```{r echo=FALSE}
+df <- Boston
+
+model <- lm(nox~poly(dis, 3), data = df)
+
+summary(model)
+
+plot(model, which = 1)
+```
+
+
+
+b.
+
+
+```{r echo=FALSE}
+library(qpcR)
+models <- rep(NA,10)
+for (i in 1:10) {
+
+model <- lm(nox~poly(dis, i), data = df)
+
+print(paste("For Model with poly", i, "The RSS is", round(RSS(model),4)))
+plot(model, which = 1)
+
+}
+```
+
+
+c.
+
+```{r echo=FALSE}
+models <- rep(NA,10)
+for (i in 1:10) {
+
+model <- lm(nox~poly(dis, i), data = df)
+
+print(i)
+print(summary(model))
+
+}
+```
+
+
+It is difficult to tell from hypothesis testing alone but it looks like a poly 3 model would be best.
+
+
+d.
+
+
+```{r echo=FALSE}
+library(boot)
+error <- rep(NA,10)
+for (i in 1:10) {
+  model <- glm(nox ~ poly(dis, i), data=df)
+  error[i] <- cv.glm(df, model, K=5)$delta[1]
+}
+
+error
+```
+
+
+Cross validation agrees that model with poly 3 is best.
+
+
+
+Problem 5.
+
+
+a.
+
+```{r}
+library(ISLR2)
+set.seed(12)
+
+df <- College
+
+index = sample(1:nrow(df), nrow(df)/2)
+
+train <- df[index,]
+test <- df[-index,]
+```
+
+
+b.
+
+```{r}
+model <- lm(Apps~., data = train)
+
+m <- mean((test$Apps - predict.lm(model, test)) ^ 2)
+
+print(paste("The test MSE of this model is", round(m, 4)))
+
+m <- mean((test$Apps - predict.lm(trainM, test)) ^ 2)
+
+```
+
+
+
+c.
+
+```{r}
+library(glmnet)
+x = model.matrix(Apps~.,data=train)[,-1] 
+
+Y = train$Apps
+
+grid = 10^seq(10,-2,length=100)
+ridge_model = glmnet(x,Y,alpha=0, lambda=grid)
+```
+
+Scaling is necessary due to the range of some variables being significantly larger than the range of others.
+
+
+d.
+
+```{r echo=FALSE}
+set.seed(12)
+x = model.matrix(Apps~. ,data=df)[,-1] 
+
+Y = df$Apps
+
+
+train = sample(1:nrow(df), nrow(df)/2)
+test=(-train)
+Y.test = Y[test]
+
+
+cv.out = cv.glmnet(x[train,],Y[train ], alpha = 0, lambda = grid, nfolds = 5) 
+
+bestlambda = cv.out$lambda.min
+print(paste("The best value for lambda is", bestlambda))
+```
+
+
+e.
+
+```{r}
+ridge.pred = predict(ridge_model,s=bestlambda,newx=x[test,])
+print(paste("The MSE using the best lambda is", mean((ridge.pred-Y.test)^2)))
+
+```
+
+
+

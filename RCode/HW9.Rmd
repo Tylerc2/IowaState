@@ -1,0 +1,271 @@
+---
+title: "HW9"
+author: "Tyler Christians"
+date: "2022-11-14"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Problem 1.
+
+
+a.
+
+KNN would not work very well because the number of predictors is so high. This is due in part because of the distance created during KNN no longer being meaningful. This can also be known as "the curse of dimensionality". The distance in the KNN is not signficantly closer than any other point in the train set
+
+
+b.
+
+
+i.
+
+Using simple logistic regression would be best simpily due to the binaryh outcomes and the low number of data.
+
+
+ii.
+
+This is also a binary outcome situation but has a bit larger of sample size, it would be best to use LDA because of that.
+
+
+iii.
+
+KNN works extremely well for non linear data so it would be best to use.
+
+
+c.
+
+QDA should work better as the bias variance trade off is near parabolic for LDA so it will begin to increase.
+
+
+d.
+
+LDA always has a decreasing training MSE LDA will perform better.
+
+
+e.
+
+False. With smaller sample data the variance from using QDA would overfit our model meaning a higher test error.
+
+
+f.
+
+```{r warning=TRUE}
+
+set.seed(1)
+
+x1 <- runif(16)
+
+x2 <- rnorm(16)
+
+x2[x2 < 0 ] <- 0 
+
+x1[x1 < 0 ] <- 0 
+
+Y <- c(0,1,0,0,0,1,0,0,1,1,1,1,0,1,0,1)
+
+
+df <- data.frame(Y, x1, x2)
+
+model <- glm(Y ~ x1 + x2, data = df, family = "binomial")
+
+
+
+summary(model)
+```
+
+Problem 2.
+
+
+a.
+
+```{r}
+set.seed(1)
+x1 = rnorm(1000) # create 3 predictors
+x2 = rnorm(1000)
+x3 = rnorm(1000)
+
+B0 = 1
+B1 = 2
+B2 = 3
+B3 = 2
+
+pr <- 1/(1+ exp(B0 + B1 * (x1) + B2 * (x2) + B3 * (x3)))
+
+y <- rbinom(1000,1,pr)
+
+df = data.frame(y=y,x1=x1,x2=x2, x3=x3)
+```
+
+
+b.
+
+```{r}
+library(ISLR2)
+model <- glm(y~., data = df, family = "binomial")
+
+predicted <- predict(model, df, type = "response")
+
+glm.pred = rep(0, length(df$y))
+glm.pred[predicted > 0.5] <- 1
+
+table(glm.pred,df$y)
+
+print(paste("Misclassification Rate:", round((58+59)/1000, 3)))
+```
+
+
+c.
+
+```{r}
+library(MASS)
+lda.fit = lda(y~.,data=df)
+
+lda.pred = predict(lda.fit, df)
+
+table(lda.pred$class, df$y)
+
+print(paste("Misclassification Rate:", round((57+60)/1000, 3)))
+```
+
+
+d.
+
+```{r}
+library(e1071)
+nb.fit = naiveBayes(y~., data=df)
+nb.class = predict(nb.fit, df)
+
+table(nb.class, df$y)
+print(paste("Misclassification Rate:", round((74+45)/1000, 3)))
+```
+
+
+e.
+
+All of the methods are very simmiliar but LDA and GLM are the best.
+
+
+Problem 3.
+
+
+a.
+
+Test observations are a success at greater than .45
+
+
+b.
+
+Test observations are a success at greater than .61
+
+
+c.
+
+Bias variance trade off is a parabolic shape for the test MSE, this means the best K value is usually centered around one number resultsing in the lowest test MSE. An extremely low K and extermely high K will have similiar test MSE.
+
+
+Problem 4.
+
+
+0.
+
+
+```{r}
+spam <- read.csv('spambase.data')
+
+set.seed(1)
+train = sample(1:nrow(spam),nrow(spam)/2, replace=FALSE)
+test = (-train)
+
+train <- spam[train,]
+
+test <- spam[test,]
+
+
+print("The Proportions of train are")
+
+
+print(table(train$X1))
+
+
+print("The Proportions of test are")
+
+
+print(table(test$X1))
+
+
+glm.fit = glm(X1 ~ ., data = train, family='binomial')
+
+
+
+glm.prob = predict(glm.fit, test,type='response') 
+
+
+print("Predicted Probabilities")
+
+print(head(glm.prob, 10))
+```
+
+a.
+
+A false positive is far more critical of a mistake. You can alsways delete spam, if an important email is sent to spam it is unlikely that it will be seen which can cause a lot more problems than just seeing an annoying email
+
+
+b.
+
+```{r}
+library(pROC)
+
+test_prob = predict(glm.fit, newdata = test, type = "response")
+
+test_roc = roc(test$X1 ~ test_prob, plot = T, print.auc = T)
+```
+
+
+c.
+
+```{r}
+glm.pred = rep(0, length(test$X1))
+glm.pred[glm.prob > 0.5] = 1
+
+print("Confusion Matrix")
+
+print(table(glm.pred, test$X1))
+
+print(paste("False Positive Rate:", round((105/(2300)), 3)))
+```
+
+
+d.
+
+```{r}
+glm.pred = rep(0, length(test$X1))
+glm.pred[glm.prob > 0.35] = 1
+
+print(table(glm.pred, test$X1))
+
+print(paste("False Positive Rate:", round((63/(2300)), 3), "Threshold = 0.35"))
+```
+
+
+e.
+
+```{r}
+lda.fit = lda(X1~.,data=train)
+
+lda.pred = predict(lda.fit, test)
+
+lda.class = rep(0,2300)
+lda.class[lda.pred$posterior[,2]>0.17] = 1
+
+table(lda.class, test$X1)
+
+
+
+print(paste("False Positive Rate:", round((68/(2300)), 3), "Threshold = 0.17"))
+```
+
+
+g.
+
+Using the basic Logistic regression is best because it has the heighest threshold resulting in minimizing the false positive and false negative rate.

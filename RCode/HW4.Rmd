@@ -1,0 +1,318 @@
+---
+title: "HW4"
+author: "Tyler Christians"
+date: "2022-09-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+prostate = read.table("prostate (1).data", header=TRUE)
+df <- prostate
+
+library(leaps)
+library(ISLR2)
+library(caret)
+```
+
+Problem 1.
+
+Part 1.
+
+```{r}
+regfit = regsubsets(lpsa~.,data=df,nbest=1,nvmax=10)
+regfit.sum = summary(regfit)
+regfit.sum
+
+n = dim(Hitters)[1]
+p = rowSums(regfit.sum$which)
+adjr2 = regfit.sum$adjr2
+cp = regfit.sum$cp
+rss = regfit.sum$rss
+AIC = n*log(rss/n) + 2*(p)
+BIC = n*log(rss/n) + (p)*log(n)
+
+sum <- cbind.data.frame(p,rss,adjr2,cp,AIC,BIC)
+```
+
+```{r}
+sum
+
+print(paste("Model with Lowset BIC has", which.min(sum$BIC), "predictors"))
+print(paste("Model with Lowset AIC has", which.min(sum$AIC), "predictors"))
+print(paste("Model with Lowset Mallows CP has", which.min(sum$cp), "predictors"))
+print(paste("Model with Heighest Adjusted R squared has", which.max(sum$adjr2), "predictors"))
+```
+
+
+The tests show that there are 2 good choices for which model to use. I tend to think that choosing a model with less predictors, 5 compared to 7, would be more benneficial. 
+
+I say this because they both have relatively the same adjr^2 values however the model with 5 predictors has a quite lower mallows cp value. By choosing this simpilar model w
+
+can also reduce our chanmces of over fitting our model.
+
+
+b.
+
+```{r}
+train = subset(df, train==TRUE)[,1:9]
+test = subset(df, train==FALSE)[,1:9]
+
+
+best.train = regsubsets(lpsa~.,data=train,nbest=1,nvmax=10)
+
+val.errors = rep(NA,8)
+for(i in 1:8){
+  test.mat = model.matrix(lpsa~.,data=test)
+  
+  coef.m = coef(best.train,id=i)
+  
+  pred = test.mat[,names(coef.m)]%*%coef.m
+  val.errors[i] = mean((test$lpsa-pred)^2)
+}
+
+val.errors
+coef(best.train,id=3)
+bestmodel <- glm(lpsa ~ lcavol + lweight + svi, data = train)
+
+print(paste("The MSE of the Best Bodel on the Entire Set is", mean((df$lpsa - predict.glm(bestmodel, df))^2)))
+```
+
+c.
+
+
+```{r}
+k = 10
+folds = sample(1:k,nrow(df),replace=TRUE)
+
+val.errors = matrix(NA,k,9)
+
+## loop over k folds (for j in 1:k)
+for(j in 1:k){
+  test = df[folds == j,]
+  train = df[folds != j,]
+  
+  best.fit = regsubsets(lpsa~.,data=train,nbest=1,nvmax=9)
+  
+  for(i in 1:9){
+    test.mat = model.matrix(lpsa~.,data=test)
+    
+    coef.m = coef(best.fit,id=i)
+    
+    pred = test.mat[,names(coef.m)]%*%coef.m
+    val.errors[j,i] = mean((test$lpsa-pred)^2)
+  }
+}
+
+avg.errors <- rep(NA, 9)
+
+for (i in 1:9) {
+  avg.errors[i] <- paste("Average MSE for", i, "Predictor(s)", mean(val.errors[, i]))
+}
+
+avg.errors
+
+best.fit = regsubsets(lpsa~.,data=train,nbest=1,nvmax=9)
+```
+
+
+The Best model to use based on a K folds validation would be the model with 3 predictors. This model is lpsa = Intercept + Lcavol + lweight + svi
+
+
+
+
+Problem 2.
+
+a.
+
+
+Cross-validation is a method of model validation that splits the data in random ways in order to get better estimates of real life more random data.
+
+k-fold divides the set of data randomly into a set number of groups of k size. The first set is trated as a training set and is fit onto the remaining sets.
+
+You the calculate the average mse of each of the splits and each of the model sizes and whichever is lowest is presumably the best.
+
+
+b.
+
+i. Advantages are The estimates of each of the error rates can be very different depending on which observations are in the training and test set. This can give us a better 
+understanding of real world outcomes. However this can lead to overestimating the Test MSE on the full data set.
+
+
+ii.
+
+Advantages: There is significantly reduced bias because there is only one train set.
+
+Disadvantages: You only base your estimates on one training set
+
+b.
+
+```{r}
+set.seed(1)
+x = rnorm(100)
+error = rnorm(100, 0, 1^2)
+y = x - 2*x^2 + error
+
+df <- cbind.data.frame(x,y)
+```
+
+
+c.
+
+```{r}
+set.seed(1020202)
+
+k <- 10
+n = 100
+MSE_M1 = MSE_M2 = MSE_M3 = MSE_M4= rep(0,n)
+for(i in 1:n){
+  test = df[i,]
+  train = df[-i,]
+  
+  M1 = lm(y~x, data=train)
+  M2 = lm(y~poly(x,2), data=train)
+  M3 = lm(y~poly(x,3), data=train)
+  M4 = lm(y~poly(x,4), data=train)
+  
+  M1_y = predict(M1, newdata=test)
+  M2_y = predict(M2, newdata=test)
+  M3_y = predict(M3, newdata=test)
+  M4_y = predict(M4, newdata=test)
+  
+  MSE_M1[i] = (test$y - M1_y)^2
+  MSE_M2[i] = (test$y - M2_y)^2
+  MSE_M3[i] = (test$y - M3_y)^2
+  MSE_M4[i] = (test$y - M4_y)^2
+}
+
+
+mean(MSE_M1)
+mean(MSE_M2)
+mean(MSE_M3)
+mean(MSE_M4)
+```
+
+d.
+
+```{r}
+set.seed(100)
+x = rnorm(100)
+error = rnorm(100, 0, 1^2)
+y = x - 2*x^2 + error
+
+df1 <- cbind.data.frame(x,y)
+
+set.seed(102)
+k <- 10
+n = 100
+MSE_M1 = MSE_M2 = MSE_M3 = MSE_M4= rep(0,n)
+for(i in 1:n){
+  test = df1[i,]
+  train = df1[-i,]
+  
+  M1 = lm(y~x, data=train)
+  M2 = lm(y~poly(x,2), data=train)
+  M3 = lm(y~poly(x,3), data=train)
+  M4 = lm(y~poly(x,4), data=train)
+  
+  M1_y = predict(M1, newdata=test)
+  M2_y = predict(M2, newdata=test)
+  M3_y = predict(M3, newdata=test)
+  M4_y = predict(M4, newdata=test)
+  
+  MSE_M1[i] = (test$y - M1_y)^2
+  MSE_M2[i] = (test$y - M2_y)^2
+  MSE_M3[i] = (test$y - M3_y)^2
+  MSE_M4[i] = (test$y - M4_y)^2
+}
+
+
+mean(MSE_M1)
+mean(MSE_M2)
+mean(MSE_M3)
+mean(MSE_M4)
+```
+
+
+No the results are not the same because different data were used
+
+
+e.
+
+The poly 2 model is the best. I expected this because y includes a value of X^2 which would make it the best predictor
+
+
+f.
+
+
+The results are the same, I still expected this for the same reasons.
+
+
+Problem 3.
+
+
+a.
+
+```{r}
+n <- 1000
+p <- 20
+x <- matrix(rnorm(p * n), n, p)
+B <- rnorm(p)
+B[3] <- 0
+B[8] <- 0
+B[18] <- 0
+B[19] <- 0
+B[20] <- 0
+e <- rnorm(p)
+y <- x %*% B + e
+
+df2 <- cbind.data.frame(y,x)
+```
+
+
+b.
+
+```{r}
+train_index = sample(seq(n), 100, replace=FALSE)
+
+train = df2[train_index,]
+test = df2[-train_index,]
+```
+
+
+c.
+
+```{r}
+best.train = regsubsets(y ~ ., data = train, nvmax = p)
+val.errors = rep(NA, p)
+for(i in 1:p){
+  test.mat = model.matrix(y~.,data=test)
+  
+  coef.m = coef(best.train,id=i)
+  
+  pred = test.mat[,names(coef.m)]%*%coef.m
+  val.errors[i] = mean((test$y-pred)^2)
+}
+
+val.errors
+```
+
+
+d.
+
+```{r}
+plot(val.errors, xlab = "Number of predictors",
+ylab = "Training MSE", pch = 20)
+```
+
+
+The model with 14 predictors is the lowest.
+
+
+f.
+
+The number of predictors for the best model is about the average of all the position of the betas that equal 0. THe average is 13.6
+

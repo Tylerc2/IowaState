@@ -1,0 +1,455 @@
+---
+title: "HW2"
+author: "Tyler Christians"
+date: "2022-09-07"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+
+Problem 1.
+
+a.
+
+The True values are B0 = 2 B1 = 3 B2 = 5
+
+b.
+
+```{r echo=FALSE}
+set.seed(1)
+X1 = seq(0,10,length.out = 100) #generates 100 equally spaced values from 0 to 10.
+X2 = runif(100) #generates 100 uniform values.
+n <- 100
+error = rnorm(n,0,1^2)
+
+B0 <- 2
+B1 <- 3
+B2 <- 5
+
+Y <- B0 + B1 * (X1) + B2 * log(X2) + error
+```
+
+
+c.
+
+```{r echo=FALSE}
+plot(X1,Y)
+plot(X2,Y)
+```
+
+There appears to be a strong positive linear relationship between Y and X1. There still appears to be some positive linear relationship between Y and X2 but not nearly as strong as between Y and X1
+
+
+d/f.
+
+```{r include=FALSE}
+set.seed(1)
+B = 5000
+beta0hat = beta1hat = beta2hat <- rep(NA,B)
+
+for(i in 1:B) {
+  error = rnorm(n, 0, 1^2)
+  Y = B0 + B1 * (X1) + B2 * log((X2)) + error 
+  fit = lm(Y ~ X1 + log(X2))
+  beta0hat[i] = fit$coefficients[[1]]
+  beta1hat[i] = fit$coefficients[[2]]
+  beta2hat[i] = fit$coefficients[[3]]
+  
+}
+```
+
+
+This simulation shows that Beta1hat is an unbiased predictor of beta1 because the model created has an average value of 3.000275 as a coefficient of X1. Since this is so close to Beta1 it is an unbiased estimator. That Beta2hat is an unbiased predictor of beta1 because it has an average of 5.002736
+
+e/g.
+
+```{r echo=FALSE}
+
+plot <- hist(beta1hat, main = "Histogram of sampling distribution")
+abline(v=3.00, col = "red", lwd = 2)
+plot
+
+plot1 <- hist(beta2hat, main = "Histogram of sampling distribution")
+abline(v=5.00, col = "red", lwd = 2)
+plot1
+```
+
+
+Problem 2.
+
+a. False, The correct would be without the E at teh beginning this is the experimental.
+
+b. False, sometimes a model with low felxibility come have a lower test MSE than training.
+
+c. True if, this is in regards to every data point in the test compared to every data point in the train if not The expected test MSE is the sum of the difference between all of the points not 1 of them.
+
+d. True, if our training model is to focused on getting an accurate prediction for our training data it may overfit to it and fail to predict our test data well.
+
+e. False, THe irreducible error is includedd in the calculation of test MSE
+
+f. True, with enough parameters predicted the training MSE can technically be driven down to 0
+
+g. This can be extemely problematic because anxiety is already a predictor which causes one of the predictors to have a direct impact on another predictor. When a matrix is full rank it means none of the variables have an effect on each other. So when one predictor is calculated by taking the average of something and another predictor the matrix loses full rank.
+
+
+Problem 3.
+
+a. 
+
+```{r include=FALSE}
+library(ISLR2)
+set.seed(12)
+df <- Carseats
+train_index = sample(1:n,n/2,rep=FALSE)
+
+train_df = df[train_index,]
+test_df = df[-train_index,]
+
+model_train = lm(Sales~.,data=df)
+
+MSE_train = mean((df$Sales - model_train$fitted.values)^2) 
+MSE_train
+
+predicted_values = predict(model_train, test_df) #first argument is the trained model, second argument is the test set. 
+MSE_test = mean((test_df$Sales - predicted_values)^2)
+MSE_test
+
+
+```
+
+```{r echo=FALSE}
+m <- summary(model_train)
+
+model_sum <- data.frame(matrix(ncol = 3, nrow = 12))
+cols <- c("Predictor", "Least Square Estimate", "Standard Error")
+colnames(model_sum) <- cols
+  
+#data.frame(Predictor = character(), Leas)
+
+model_sum$`Least Square Estimate` <- model_train$coefficients
+model_sum$Predictor <- c("Intercept", "CompPrice", "Income", "Advertising", "Population", "Price", "ShelveLocGood", "ShelveLocMedium", "Age", "Education", "UrbanYes", "USYes")
+model_sum$`Standard Error` <- m$coefficients[, 2]
+model_sum
+```
+
+Not entirely sure what else there is to summarize other than according to the summary the best predictors for the model are CompPrice, Income, Population, Price, ShelveLocGood, ShelveLocMedium, and Age
+
+
+b.
+
+Both the training and test have extremely low MSE values at both just above 1. Since the difference between the 2 is only about .013, The training model did an excellent job of predicting the test.
+
+Training MSE: 1.007084
+
+Test MSE: 1.02902
+
+
+c.
+
+```{r echo=FALSE}
+predicted_values = predict(model_train,test_df) 
+predicted_values[1:5]
+```
+
+
+d.
+
+```{r echo=TRUE}
+X2 <- test_df$CompPrice
+X3 <- test_df$Income
+X4 <- test_df$Advertising
+X5 <- test_df$Population
+X6 <- test_df$Price
+X7 <- test_df$ShelveLoc
+X8 <- test_df$Age
+X9 <- test_df$Education
+X10 <- test_df$Urban
+X11 <- test_df$US
+
+Betas <- NULL
+Answer <- NULL
+
+for (i in 1:12) {
+  Betas[i] <- model_sum$`Least Square Estimate`[i]
+}
+
+for (i in 1:5) {
+ part1 <- (Betas[1] + (Betas[2] * X2[i]) + (Betas[3] * X3[i]) + (Betas[4] * X4[i]) + (Betas[5] * X5[i]) +
+  (Betas[6] * X6[i]))
+ 
+ if (X7[i] == "Good") {
+  part2 <- ((Betas[7] * 1) + (Betas[8] * 0))
+ }
+ 
+ if (X7[i] == "Medium") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 1))
+ }
+ 
+ else if (X7[i] == "Bad") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 0))
+ }
+ 
+ part3 <- (Betas[9] * X8[i]) + (Betas[10] * X9[i])
+ 
+ if (X10[i] == "Yes") {
+  part4 <- ((Betas[11] * 1)) 
+ }
+ 
+ else if (X10[i] == "No") {
+   part4 <- 0
+ }
+ 
+ if (X11[i] == "Yes") {
+   part5 <- (Betas[12] * 1)
+ }
+
+ else if (X11[i] == "No") {
+   part5 <- 0
+ }   
+ 
+ Answer[i] <- part1 + part2 + part3 + part4 + part5
+}
+
+Answer
+```
+
+
+e.
+
+```{r echo=FALSE}
+set.seed(12)
+full_model <- lm(Sales ~ ., data = df)
+
+m <- summary(full_model)
+
+model_sum1 <- data.frame(matrix(ncol = 3, nrow = 12))
+cols <- c("Predictor", "Least Square Estimate", "Standard Error")
+colnames(model_sum1) <- cols
+  
+#data.frame(Predictor = character(), Leas)
+
+model_sum1$`Least Square Estimate` <- model_train$coefficients
+model_sum1$Predictor <- c("Intercept", "CompPrice", "Income", "Advertising", "Population", "Price", "ShelveLocGood", "ShelveLocMedium", "Age", "Education", "UrbanYes", "USYes")
+model_sum1$`Standard Error` <- m$coefficients[, 2]
+model_sum1
+```
+
+
+I am choosing to do a hypothesis test on Income as a predictor
+
+Ho: P > 0.05 Income is not a valid predictor in the model to predict Sales 
+
+Ha: P < 0.05 Income is a valid predictor in the model to predict sale
+
+F: 8.565
+
+P: 2.58e-16
+
+Conclusion: We can accept our alternative hypothesis that Income is a valid predictor in the model to predict sale at a significance level of a = 0.05
+
+
+f.
+
+```{r echo=FALSE}
+m$sigma**2
+```
+
+sigma squared represents the variance in our model its value is 1.038231
+
+
+g.
+
+The interpretation for the estimated regression coefficient associated with Advertising is for every $1000 increase in advertsing budget sales rise by 0.12
+
+
+h.
+
+```{r echo=FALSE}
+
+X2 <- mean(df$CompPrice)
+X3 <- median(df$Income)
+X4 <- 15
+X5 <- 500
+X6 <- 50
+X7 <- "Good"
+X8 <- 30
+X9 <- 10
+X10 <- "Yes"
+X11 <- "Yes"
+
+Betas <- NULL
+
+for (i in 1:12) {
+  Betas[i] <- model_sum1$`Least Square Estimate`[i]
+}
+
+ part1 <- (Betas[1] + (Betas[2] * X2) + (Betas[3] * X3) + (Betas[4] * X4) + (Betas[5] * X5) +
+  (Betas[6] * X6))
+ 
+ if (X7 == "Good") {
+  part2 <- ((Betas[7] * 1) + (Betas[8] * 0))
+ }
+ 
+ if (X7 == "Medium") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 1))
+ }
+ 
+ if (X7 == "Bad") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 0))
+ }
+ 
+ part3 <- (Betas[9] * X8) + (Betas[10] * X9)
+ 
+ if (X10 == "Yes") {
+  part4 <- ((Betas[11] * 1)) 
+ }
+ 
+ if (X10 == "No") {
+   part4 <- 0
+ }
+ 
+ if (X11 == "Yes") {
+   part5 <- (Betas[12] * 1)
+ }
+
+ if (X11 == "No") {
+   part5 <- 0
+ }   
+ 
+Answer <- (part1 + part2 + part3 + part4 + part5)
+
+Answer
+```
+
+The estimate for f(x) is 18.72969
+
+
+i.
+
+```{r echo=FALSE}
+set.seed(12)
+error = rnorm(1,0,1)
+X2 <- mean(df$CompPrice)
+X3 <- median(df$Income)
+X4 <- 15
+X5 <- 500
+X6 <- 50
+X7 <- "Good"
+X8 <- 30
+X9 <- 10
+X10 <- "Yes"
+X11 <- "Yes"
+
+Betas <- NULL
+
+for (i in 1:12) {
+  Betas[i] <- model_sum1$`Least Square Estimate`[i]
+}
+
+ part1 <- (Betas[1] + (Betas[2] * X2) + (Betas[3] * X3) + (Betas[4] * X4) + (Betas[5] * X5) +
+  (Betas[6] * X6))
+ 
+ if (X7 == "Good") {
+  part2 <- ((Betas[7] * 1) + (Betas[8] * 0))
+ }
+ 
+ if (X7 == "Medium") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 1))
+ }
+ 
+ if (X7 == "Bad") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 0))
+ }
+ 
+ part3 <- (Betas[9] * X8) + (Betas[10] * X9)
+ 
+ if (X10 == "Yes") {
+  part4 <- ((Betas[11] * 1)) 
+ }
+ 
+ if (X10 == "No") {
+   part4 <- 0
+ }
+ 
+ if (X11 == "Yes") {
+   part5 <- (Betas[12] * 1)
+ }
+
+ if (X11 == "No") {
+   part5 <- 0
+ }   
+ 
+Answer <- (part1 + part2 + part3 + part4 + part5) + error
+
+Answer
+```
+
+The estimation for Y is similar compared to predicting f(x) because their is an error term it will change slightly
+
+
+j.
+
+```{r echo=FALSE}
+set.seed(12)
+error = rnorm(1,0,1)
+X2 <- mean(df$CompPrice)
+X3 <- median(df$Income)
+X4 <- 15
+X5 <- 500
+X6 <- 450
+X7 <- "Good"
+X8 <- 30
+X9 <- 10
+X10 <- "Yes"
+X11 <- "Yes"
+
+Betas <- NULL
+
+for (i in 1:12) {
+  Betas[i] <- model_sum1$`Least Square Estimate`[i]
+}
+
+ part1 <- (Betas[1] + (Betas[2] * X2) + (Betas[3] * X3) + (Betas[4] * X4) + (Betas[5] * X5) +
+  (Betas[6] * X6))
+ 
+ if (X7 == "Good") {
+  part2 <- ((Betas[7] * 1) + (Betas[8] * 0))
+ }
+ 
+ if (X7 == "Medium") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 1))
+ }
+ 
+ if (X7 == "Bad") {
+  part2 <- ((Betas[7] * 0) + (Betas[8] * 0))
+ }
+ 
+ part3 <- (Betas[9] * X8) + (Betas[10] * X9)
+ 
+ if (X10 == "Yes") {
+  part4 <- ((Betas[11] * 1)) 
+ }
+ 
+ if (X10 == "No") {
+   part4 <- 0
+ }
+ 
+ if (X11 == "Yes") {
+   part5 <- (Betas[12] * 1)
+ }
+
+ if (X11 == "No") {
+   part5 <- 0
+ }   
+ 
+Answer <- (part1 + part2 + part3 + part4 + part5) + error
+
+Answer
+```
+Our model has its limitations because of negative coefficients. Since our model is based only on data that we have, if a new piece of data is being predicted that has an extreme outliar value it can throw off our model, because our model that we created never would have predicted a carseat being priced at $450. This outcome does not make sense as you can't really have negative sales.

@@ -1,0 +1,288 @@
+---
+title: "HW5"
+author: "Tyler Christians"
+date: "2022-10-10"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Problem 1.
+
+a.
+
+```{r}
+set.seed(1) # so we all get the randomly generated data
+n = 100
+x = runif(n, min = 0, max = 2)
+
+error = rnorm(100,0,1)
+y = 4 + x + x^2 + x^3 + x^4 + x^5 + error
+train = data.frame(x,y)
+
+
+```
+
+
+b.
+
+```{r}
+MSE_M1 = MSE_M2 = MSE_M3 = MSE_M4 = MSE_M5 = rep(0,n)
+
+  M1 = lm(y~x, data=train)
+  M2 = lm(y~poly(x,2), data=train)
+  M3 = lm(y~poly(x,3), data=train)
+  M4 = lm(y~poly(x,5), data=train)
+  M5 = lm(y~poly(x,11), data=train)
+
+```
+
+
+c.
+
+True value: 7.34330
+
+
+d.
+
+```{r}
+set.seed(1)
+n = 100
+trainsets <- NA
+M1saved9s <- NA
+M2saved9s <- NA
+M3saved9s <- NA
+M4saved9s <- NA
+M5saved9s <- NA
+for (i in 1:1000) { 
+  error = rnorm(100,0,1)
+  y = 4 + x + x^2 + x^3 + x^4 + x^5 + error
+
+  train <- data.frame(x, y)
+
+  M1.1 = lm(y~x, data=train)
+  M2.1 = lm(y~poly(x,2), data=train)
+  M3.1 = lm(y~poly(x,3), data=train)
+  M4.1 = lm(y~poly(x,5), data=train)
+  M5.1 = lm(y~poly(x,11), data=train)
+  
+  new <- data.frame(x=c(0.9))
+  
+  if (i < 6) {
+  M1saved9s[i] <- predict(M1.1, new)
+  M2saved9s[i] <- predict(M2.1, new)
+  M3saved9s[i] <- predict(M3.1, new)
+  M4saved9s[i] <- predict(M4.1, new)
+  M5saved9s[i] <- predict(M5.1, new)
+  }
+}
+
+
+print("M1")
+M1saved9s
+print("M2")
+M2saved9s
+print("M3")
+M3saved9s
+print("M4")
+M4saved9s
+print("M5")
+M5saved9s
+```
+
+e.
+
+```{r}
+x <- rep(0.9,1000)
+error = rnorm(1000,0,1)
+
+MSE_M1 = MSE_M2 = MSE_M3 = MSE_M4 = MSE_M5 = rep(0,1000)
+
+y = 4 + x + x^2 + x^3 + x^4 + x^5 + error
+
+test = data.frame(x,y)
+
+  M1_y = predict(M1, newdata=test)
+  M2_y = predict(M2, newdata=test)
+  M3_y = predict(M3, newdata=test)
+  M4_y = predict(M4, newdata=test)
+  M5_y = predict(M5, newdata=test)
+for (i in 1:1000) {
+  MSE_M1[i] = (test$y[i] - M1_y[i])^2
+  MSE_M2[i] = (test$y[i] - M2_y[i])^2
+  MSE_M3[i] = (test$y[i] - M3_y[i])^2
+  MSE_M4[i] = (test$y[i] - M4_y[i])^2
+  MSE_M5[i] = (test$y[i] - M5_y[i])^2
+}
+print(paste("Mean of M1", mean(MSE_M1)))
+print(paste("Mean of M2", mean(MSE_M2)))
+print(paste("Mean of M3", mean(MSE_M3)))
+print(paste("Mean of M4", mean(MSE_M4)))
+print(paste("Mean of M5", mean(MSE_M5)))
+```
+
+The model with the lowest test MSE is Model 4. This is because the flexibility evened out and the bias and variance errors were at the lowest combined points. After that the MSE rises again because the bias rises.
+
+
+Problem 2.
+
+a. 
+
+No it is not always true, a model with a higher number of predictors may contain predictors that have a high association which could remove them from said model in favor of other predictors.
+
+
+b.
+
+True, The way the algorithm works is The model with 1 more predictor is obtained by modifying the predictors in the model with a certain number of predictors with one additional predictor.
+
+
+e.
+
+AIC tries to mimic the true model. BIC also has heavier penalty terms and will usually pick simipler models. These work better because they account for other things outside of just the test MSE, which can be just highly correlated models that look very similiar.
+
+
+Problem 3.
+
+
+```{r}
+library(ISLR2)
+library(leaps)
+df <- College
+
+dt <- sort(sample(nrow(df), nrow(df)*.9))
+
+train <- df[dt,]
+test <- df[-dt,]
+
+regfit.fwd = regsubsets(Apps~.,data=train, nvmax=17, method = "forward")
+regfit.bwd = regsubsets(Apps~.,data=train, nvmax=17, method = "backward")
+
+regfit.fwd.sum = summary(regfit.fwd)
+n = dim(df)[1]
+p = rowSums(regfit.fwd.sum$which)  
+
+rss = regfit.fwd.sum$rss
+AIC = n*log(rss/n) + 2*(p)
+AIC
+
+regfit.bwd.sum = summary(regfit.bwd)
+n1 = dim(df)[1]
+p1 = rowSums(regfit.bwd.sum$which) 
+
+rss1 = regfit.bwd.sum$rss
+AIC1 = n1*log(rss1/n1) + 2*(p1)
+
+Model <- lm(Apps ~ Private + Accept + Top10perc + Top25perc + F.Undergrad + P.Undergrad + Outstate + Room.Board + PhD + perc.alumni + Expend + Grad.Rate, data = train)
+
+
+M1_apps = predict(Model, newdata=test)
+
+MSE_M1 = (test$Apps - M1_apps)
+
+
+```
+
+
+```{r include=FALSE}
+model0 = lm(Apps~1,data=train)
+#summary(model0)
+
+modelfull = lm(Apps~.,data=train)
+#summary(modelfull)
+
+library(MASS)
+
+
+stepAIC(model0,scope=list(lower=model0,upper=modelfull),direction="forward")
+#Forward results
+#Step:  AIC=9734.98
+#Apps ~ Accept + Top10perc + Expend + Outstate + Enroll + Room.Board + 
+#    Top25perc + F.Undergrad + Grad.Rate + Private + PhD
+stepAIC(modelfull,scope=list(lower=model0,upper=modelfull),direction="backward")
+#backward results
+#Step:  AIC=9734.98
+#Apps ~ Accept + Top10perc + Expend + Outstate + Enroll + Room.Board + 
+#    Top25perc + F.Undergrad + Grad.Rate + Private + PhD
+Model <- lm(Apps ~ Private + Accept + Enroll + Top10perc + Top25perc + F.Undergrad + Outstate + Room.Board + PhD + Expend + Grad.Rate, data = train)
+
+
+M1_apps = predict(Model, newdata=test)
+
+MSE_M1 = (test$Apps - M1_apps)^2
+
+mean(MSE_M1)
+```
+
+
+Both methods have the same AIC of 9734.98 They both use the model of #Apps ~ Accept + Top10perc + Expend + Outstate + Enroll + Room.Board + Top25perc + F.Undergrad + Grad.Rate + Private + PhD
+
+With an extremely high test MSE of 940111.7
+
+
+
+Problem 4.
+
+
+Both of our predictors are essentially equivalent to 0 because if we ran a hypothesis test with them we would fail to accept our alternative. This could ahppen when none of our predictors have any relation to the y hat we are trying to predict.
+
+
+
+Problem 5.
+
+a.
+
+```{r echo=FALSE}
+df <- Credit
+
+str(df)
+```
+
+
+b.
+
+Summary is here
+```{r echo=FALSE}
+fit <- lm(Balance ~ Income + Student, data = df)
+summary(fit)
+```
+
+c.
+
+For Students: 211.1430 + 5.9843(Income) + 382.6705
+Non Students: 211.1430 + 5.9843(Income)
+
+
+d.
+
+For every Debt Goes up by $5.9843 for every 1 increase in income
+
+
+
+e.
+
+```{r}
+df1 <- df[!df$Student== "Yes", ]
+df2 <- df[!df$Student == "No", ]
+
+mean(df1$Income)
+mean(df2$Income)
+```
+
+Creating interaction terms would be a good idea because income varies whether or not you are a student
+
+
+f.
+
+```{r}
+fit1 <- lm(Balance ~ Income + Student + Income:Student, data=Credit)
+summary(fit1)
+```
+g.
+
+Students: 200.623 + 6.218(Income) + 476.676 - 1.999
+
+Non Student: 200.623 + 6.218
+
+e.
+
+No these results are not contradictory. All the f statistic tells us is if the model is different from an intercept only model while R squared explains how much of our model is explained by the predictors

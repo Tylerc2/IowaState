@@ -1,0 +1,286 @@
+---
+title: "DS303HW1"
+author: "Tyler Christians"
+date: "2022-09-01"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+Problem 1.
+
+
+
+A.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+b.
+
+Expected test MSE is the expected Mean Square Error that results from adding together the variance of the data, the bias squared and the irreducible error. It is the overall amount of error we will expect in the model we create.
+
+The bias is the amount of error that we get by estimating for our new function. It measures the average amount of deviation of our predicted values from our true values. 
+
+Variance, is the amount of which our prediction model would change if we estimated it using different training data. For example if we had a smaller change in our prediction data it would lead to much larger changes in our prediction model.
+
+Training MSE measures the average difference between our training model and what our training data shows. It is calculated by squaring the difference between what the training model predicts, and what it actually shows. It may sound good to keep this number as low as possible, however it is not the best in every circumstance because if the model has a large amount of flexibility it will be good at predicting our training data, but won't inheritly be good at predicting new data.
+
+The irreducible error is unchanging factor of every model it is there to account for random differences within or data.
+
+
+c.
+
+The curves seen in part a. can be explained by the following.
+
+Irreducible error: This constantly remains the same as it is represented as epsilon in our model a real number that is added to our model that stays the same and is not affected by the predictors, it is not affected by the models flexibility.
+
+Variance: The error associated with variance rises with model flexibility because if there are small changes in the training data the changes will be larger in the model prediction which can lead to overfitting.
+
+Bias Squarred: the error associated with bias squarred decreased with model flexibility. This is because the model is more flexible and allows it to follow the training data a lot closer allowing for a well fitting training set. 
+
+Test MSE: has a parabolic shape because it is affected by both the variance and bias. This is a trade off so at the center of parabola it will be at it's lowest point due to the trade off of bias and variance being at an equal point. The test MSE is at a high point with low flexibility because of the emphasis on having a low amount of variance, and at a high point with large flexibility because of its emphasis on creating a low bias.
+
+Training Error: Training error will always decrease with model flexibility because we already have the data so we could essentially create a model that is so flexible that it could get near 0. We can create a model that is follows the data so flexible it matches with all the data points perfectly resulting in a test MSE of 0, or where there is no difference between our models predicted values and the real values.
+
+
+d.
+
+The advantages of having a highly flexible model, when it makes sense to use, are decreasing the bias of our model and it can give a better fit data that isn't very linear as well as having more accurate predictions. It would make sense to use a highly flexible model when we are working with large sets of data without a lot of predictors and the data is not very linear as well as when we are trying to predict values and not so much a trend. The use of a less flexible model, when it makes sense to use, are decreasing the amount of variance in our model and it can give us a better idea of general trend. It would make the most sense to use in a case with a lot of predictors and when not as many data points are available, as well as when we are interested in predicting a more general trend and not specific data points.
+
+
+
+Problem 2.
+
+```{r include=FALSE}
+library(ISLR2)
+head(Boston)
+df <- Boston
+```
+
+
+a.
+
+```{r include=FALSE}
+summary(df)
+
+```
+
+Boston data has n = 506 rows and 13 variables.
+
+b.
+
+Average Per capita Crime rate is 3.61352
+
+c.
+
+```{r echo=FALSE}
+mean(df$crim[df$chas == 0])
+mean(df$crim[df$chas == 1])
+```
+
+Crime away from the river is 3.744447
+Crime when near the river is 1.81567
+
+It is safer to be near the river.
+
+d.
+
+```{r echo=FALSE}
+summary(df$crim)
+
+OL <- 3.67708 + (1.5 * (3.67708 - 0.08204))
+
+sum(df$crim > OL)
+```
+
+There appear to be 66 areas that have a higher crime rate compared to others. This is based on the outlier calculation of 3.67708 + (1.5 * (3.67708 - 0.08204))
+3.67708 being the 3rd quartile of crime rate and 0.08204 being the lower quartile rate. This gives us the number of any crime rate above 9.06964 being considered an outlier and comparitively having a high crime rate.
+
+e.
+
+```{r echo=FALSE}
+correlation <- cor(df, df$crim)
+
+round(correlation, 2)
+```
+
+Crime has positive correlation with rad, the index of accessibility to radial highway, with tax, the full value property tax rate per $100,000, and some but not as much positive correlation with lstat, the lower status of the population.
+
+f.
+
+```{r echo=FALSE}
+lm(crim ~ lstat, data = df)
+
+plot(df$lstat, df$crim)
+```
+
+Crime = -3.3305 + 0.5488(lstat)
+
+The coefficients are intercept = -3.3305 and B1 = 0.5488
+
+g.
+
+The model was created by plotting the data with crim on the y axis and lstat on the x axis. A linear line was created to with least amount of distance on average between the points on the plot and the line that is created. This approach is reasonable to do with a computer but by hand would be extremly difficult especially when more predictors are added, if the question is in regards to if it make sense to show a linear relationship between the two, it can be said yes because there appears to be some linear relation in the graph of the two.
+
+h.
+
+```{r echo=FALSE}
+modelv <- NULL
+for (i in 2:13) {
+  column <- colnames(df[i])
+  print(column)
+  model <- lm(df$crim ~ df[, i])
+  print(summary(model))
+  if (i != 4) {
+    print(plot(df[, i], df$crim, pch = 20, main = paste("Relationship between crime and", column, sep = " "), xlab = column, ylab = "Crime rate per capita", abline(model, col = "red")))
+  }
+  modelv <- c(modelv, model$coefficients)
+}
+  
+#for (i in 2:13) {
+#  model <- lm(df$crim ~ + df[, i])
+#  modelv <- c(modelv, model$coefficients)
+#}
+
+```
+
+
+
+i.
+
+```{r echo=FALSE}
+model <- lm(crim ~  ., data = df)
+
+summary(model)
+```
+
+This model has an overall p value that is significant at less than 0.05 with the best predictors being zn, dis, rad, and medv within the model. the formula to calculate crim with this predictor would be crim = 13.78 + 0.046(zn) + -0.058(indus) + -0.82(chas) + -9.96(nox) + 0.63(rm) + -0.00085(age) + -1.01(dis) + 0.61(rad) + -0.0038(tax) + -0.30(ptratio) + 0.13(lstat) + -0.22(medv)
+
+j.
+```{r include=FALSE}
+modelv <- modelv[c(F, T, F, T, F, T, F, T, F, T, F, T, F, T, F, T, F, T, F, T, F, T, F, T)]
+modelv1 <- model$coefficients
+modelv1 <- modelv1[c(F,T,T,T,T,T,T,T,T,T,T,T,T)]
+
+
+```
+
+```{r include=FALSE}
+#df1 <- data.frame(modelv, modelv1)
+df1 <- data.frame(Method=character(), Variable=character(), Coefficient= numeric())
+
+for (i in 1:24) {
+  if (i %% 2 == 0) {
+    df1[i, 1] <- "Multiple" 
+  }
+  else {
+    df1[i, 1] <- "Simple"
+  }
+}
+
+df1[1:2,2] <- "zn"
+df1[3:4,2] <- "indus"
+df1[5:6,2] <- "chas"
+df1[7:8, 2] <- "nox"
+df1[9:10, 2] <- "rm"
+df1[11:12, 2] <- "age"
+df1[13:14, 2] <- "dis"
+df1[15:16, 2] <- "rad"
+df1[17:18, 2] <- "tax"
+df1[19:20, 2] <- "ptratio"
+df1[21:22, 2] <- "lstat"
+df1[23:24, 2] <- "medv"
+
+df1[1, 3] <- -0.07393498
+df1[3, 3] <- 0.50977633
+df1[5, 3] <- -1.89277655
+df1[7, 3] <- 31.24853120
+df1[9, 3] <- -2.68405122
+df1[11, 3] <- 0.10778623
+df1[13, 3] <- -1.55090168
+df1[15, 3] <- 0.61791093
+df1[17, 3] <- 0.02974225
+df1[19, 3] <- 1.15198279
+df1[21, 3] <- 0.54880478
+df1[23, 3] <- -0.36315992
+
+df1[2, 3] <-  0.0457100
+df1[4, 3] <- -0.0583501
+df1[6, 3] <- -0.8253776
+df1[8, 3] <- -9.9575865
+df1[10, 3] <- 0.6289107
+df1[12, 3] <- -0.0008483
+df1[14, 3] <- -1.0122467
+df1[16, 3] <- 0.6124653
+df1[18, 3] <- -0.0037756
+df1[20, 3] <- -0.3040728
+df1[22, 3] <- 0.1388006
+df1[24, 3] <- -0.2200564
+```
+
+
+```{r echo=FALSE}
+library(ggplot2)
+ggplot(data = df1, aes(Variable, Coefficient, fill = Method))+ geom_col(position = "dodge")
+```
+
+The graph above shows the coefficients of both the Multiple and  simple linear regression models. We can see that there is a large difference in several of the coefficients especially in the nox variable showing that there is correlation between nox and other varaibles. Using multiple regression allows us to account for corelation and use that in our model making while simple linear regression does not allow us to account fo that.
+
+
+k.
+
+```{r echo=FALSE}
+set.seed(1)
+n = dim(df)[1]
+train_index = sample(1:n,n/2,rep=FALSE)
+train_df = df[train_index,]
+test_df = df[-train_index,]
+model_train = lm(crim~. ,data=train_df)
+MSE_train = mean((train_df$crim - model_train$fitted.values)^2) 
+MSE_train
+
+predicted_values = predict(model_train, test_df)
+MSE_test = mean((test_df$crim - predicted_values)^2)
+MSE_test
+```
+
+Training MSE = 42.49345
+Test MSE = 41.19923
+
+l.
+
+```{r echo=FALSE}
+set.seed(1)
+train_index = sample(1:n,n/2,rep=FALSE)
+train_df = df[train_index,]
+test_df = df[-train_index,]
+
+model_train = lm(crim ~ zn + indus + nox + dis + rad + ptratio + medv , data=train_df)
+SE_train = mean((train_df$crim - model_train$fitted.values)^2) 
+MSE_train
+
+predicted_values = predict(model_train, test_df)
+MSE_test = mean((test_df$crim - predicted_values)^2)
+MSE_test
+```
+Training MSE = 42.49345
+Test MSE = 39.62763
+
+These results show a slightly better analysis and on the test MSE as we only removed 5 variables from the original analaysis the ones that were kept have some of the largest impact on prediction and show high correlation with crime rate, resulting in a better Test MSE
